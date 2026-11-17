@@ -1,4 +1,3 @@
-
 from typing import Optional
 
 from langchain_core.language_models import BaseChatModel
@@ -12,6 +11,7 @@ class ModelFactory:
     def get_chat_model(
         provider: Optional[str] = None,
         temperature: float = 0.7,
+        api_key: Optional[str] = None,
     ) -> BaseChatModel:
 
         selected_provider = (
@@ -20,24 +20,26 @@ class ModelFactory:
 
         if selected_provider == "openai":
 
-            if not settings.openai_api_key:
+            if not api_key or not api_key.strip():
                 raise ValueError(
-                    "OPENAI_API_KEY is missing from .env."
+                    "An OpenAI API key is required. "
+                    "Enter your personal API key in the Streamlit sidebar."
                 )
 
             from langchain_openai import ChatOpenAI
 
             return ChatOpenAI(
                 model=settings.openai_model,
-                api_key=settings.openai_api_key,
+                api_key=api_key.strip(),
                 temperature=temperature,
             )
 
         elif selected_provider == "gemini":
 
-            if not settings.gemini_api_key:
+            if not api_key or not api_key.strip():
                 raise ValueError(
-                    "GEMINI_API_KEY is missing from .env."
+                    "A Gemini API key is required. "
+                    "Enter your personal API key in the Streamlit sidebar."
                 )
 
             from langchain_google_genai import (
@@ -46,7 +48,7 @@ class ModelFactory:
 
             return ChatGoogleGenerativeAI(
                 model=settings.gemini_model,
-                google_api_key=settings.gemini_api_key,
+                google_api_key=api_key.strip(),
                 temperature=temperature,
             )
 

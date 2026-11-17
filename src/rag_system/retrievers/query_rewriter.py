@@ -1,4 +1,3 @@
-
 from pathlib import Path
 
 from langchain_core.output_parsers import StrOutputParser
@@ -35,6 +34,7 @@ class QueryRewriter:
         question: str,
         chat_history: list,
         provider: str | None = None,
+        api_key: str | None = None,
     ) -> str:
 
         if not question or not question.strip():
@@ -46,13 +46,13 @@ class QueryRewriter:
         if not chat_history:
             return question
 
-        # Select the configured LLM.
+        # Create the selected user's LLM.
         llm = ModelFactory.get_chat_model(
             provider=provider,
             temperature=0.0,
+            api_key=api_key,
         )
 
-        # Build the rewriting prompt.
         prompt = ChatPromptTemplate.from_messages([
             ("system", self.system_prompt),
             MessagesPlaceholder(
@@ -61,10 +61,8 @@ class QueryRewriter:
             ("human", "{question}"),
         ])
 
-        # Build the LCEL chain.
         chain = prompt | llm | StrOutputParser()
 
-        # Generate standalone search query.
         rewritten_query = chain.invoke(
             {
                 "chat_history": chat_history,

@@ -1,4 +1,4 @@
-
+﻿
 import hashlib
 import json
 import logging
@@ -6,7 +6,6 @@ import re
 from pathlib import Path
 from threading import RLock
 from typing import Any
-from uuid import UUID
 
 from langchain_core.documents import Document
 from rank_bm25 import BM25Okapi
@@ -44,7 +43,7 @@ class HybridRetrievalService:
     def _tokenize(text: str) -> list[str]:
         return re.findall(r"\b\w+\b", text.lower())
 
-    def _get_corpus_path(self, user_id: UUID) -> Path:
+    def _get_corpus_path(self, user_id: str) -> Path:
         return self.bm25_directory / f"{user_id}.json"
 
     @staticmethod
@@ -79,7 +78,7 @@ class HybridRetrievalService:
     def add_documents(
         self,
         documents: list[Document],
-        user_id: UUID,
+        user_id: str,
     ) -> None:
 
         if not documents:
@@ -149,7 +148,7 @@ class HybridRetrievalService:
     def _bm25_search(
         self,
         query: str,
-        user_id: UUID,
+        user_id: str,
         k: int,
     ) -> list[Document]:
 
@@ -372,7 +371,7 @@ class HybridRetrievalService:
     def retrieve(
         self,
         query: str,
-        user_id: UUID,
+        user_id: str,
         k: int = 4,
     ) -> list[Document]:
 
@@ -437,3 +436,4 @@ class HybridRetrievalService:
         )
 
         return final_results
+

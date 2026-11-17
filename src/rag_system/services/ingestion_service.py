@@ -1,8 +1,9 @@
 from datetime import datetime, timezone
 from pathlib import Path
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 from fastapi import HTTPException, UploadFile
+
 from rag_system.services.hybrid_retrieval_service import (
     HybridRetrievalService,
 )
@@ -34,7 +35,7 @@ class DocumentIngestionService:
     async def save_document(
         self,
         file: UploadFile,
-        user_id: UUID,
+        user_id: str,
     ) -> DocumentMetadata:
 
         if not file.filename:
@@ -79,7 +80,7 @@ class DocumentIngestionService:
         user_directory = (
             PROJECT_ROOT
             / settings.upload_directory
-            / str(user_id)
+            / user_id
         )
 
         user_directory.mkdir(
@@ -122,7 +123,7 @@ class DocumentIngestionService:
     async def ingest_document(
         self,
         file: UploadFile,
-        user_id: UUID,
+        user_id: str,
     ) -> tuple[DocumentMetadata, int]:
 
         metadata = await self.save_document(
@@ -131,7 +132,7 @@ class DocumentIngestionService:
         )
 
         try:
-            # Step 1: Load and split document
+            # Step 1: Process document.
             chunks = self.processing_service.process_document(
                 metadata.storage_path
             )
@@ -145,15 +146,17 @@ class DocumentIngestionService:
                     ),
                 )
 
-            # Step 2: Select vector database
+            # Step 2: Select vector database.
             vector_store = VectorStoreFactory.get_vector_store()
 
-            # Step 3: Generate embeddings and store chunks
+            # Step 3: Store document chunks.
             stored_ids = vector_store.add_documents(
                 documents=chunks,
                 user_id=user_id,
                 document_id=str(metadata.document_id),
             )
+
+            # Step 4: Update BM25 corpus.
             self.hybrid_retrieval_service.add_documents(
                 documents=chunks,
                 user_id=user_id,

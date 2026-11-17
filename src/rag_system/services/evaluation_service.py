@@ -1,10 +1,10 @@
-
 from pathlib import Path
-from rag_system.core.config import settings
+
+from pydantic import BaseModel, Field, field_validator
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from pydantic import BaseModel, Field, field_validator
 
+from rag_system.core.config import settings
 from rag_system.core.logging import get_logger
 from rag_system.models.model_factory import ModelFactory
 
@@ -42,10 +42,13 @@ class EvaluationResult(BaseModel):
     )
     @classmethod
     def validate_explanation(cls, value: str) -> str:
+
         value = value.strip()
 
         if not value:
-            raise ValueError("Evaluation explanation cannot be empty.")
+            raise ValueError(
+                "Evaluation explanation cannot be empty."
+            )
 
         return value
 
@@ -73,6 +76,7 @@ class RAGEvaluationService:
         answer: str,
         context: str,
         provider: str | None = None,
+        api_key: str | None = None,
     ) -> dict:
 
         if not question or not question.strip():
@@ -93,7 +97,11 @@ class RAGEvaluationService:
         llm = ModelFactory.get_chat_model(
             provider=provider,
             temperature=0.0,
+            api_key=api_key,
         )
+
+        if (provider or settings.llm_provider).lower().strip() == "ollama":
+            llm = llm.bind(format="json")
 
         prompt = ChatPromptTemplate.from_messages([
             (
@@ -112,7 +120,14 @@ class RAGEvaluationService:
         ])
 
         chain = prompt | llm | self.parser
+        logger.info(
+            "Evaluation input sizes: question=%d answer=%d context=%d",
+            len(question),
+            len(answer),
+            len(context),
+        )
 
+        logger.info("Sending evaluation request to LLM.")
         result = chain.invoke(
             {
                 "question": question,
@@ -130,7 +145,10 @@ class RAGEvaluationService:
                 },
             },
         )
+        logger.info("LLM evaluation response parsed successfully.")
+
         if not context:
+
             result = result.model_copy(
                 update={
                     "faithfulness_score": 0.0,

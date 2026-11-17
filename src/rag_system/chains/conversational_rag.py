@@ -1,7 +1,7 @@
-from pathlib import Path
-from typing import Any
+﻿from pathlib import Path
 from uuid import UUID
-from rag_system.retrievers.query_rewriter import QueryRewriter
+from typing import Any
+
 from langchain_core.documents import Document
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import (
@@ -14,6 +14,7 @@ from rag_system.services.conversation_memory import (
     ConversationMemory,
 )
 from rag_system.services.retrieval_service import RetrievalService
+from rag_system.retrievers.query_rewriter import QueryRewriter
 
 
 PROMPT_PATH = (
@@ -35,6 +36,7 @@ class ConversationalRAG:
         self.retrieval_service = RetrievalService()
         self.memory = ConversationMemory(max_messages=20)
         self.query_rewriter = QueryRewriter()
+
         self.system_prompt = PROMPT_PATH.read_text(
             encoding="utf-8"
         )
@@ -71,57 +73,56 @@ class ConversationalRAG:
     def _build_chain(
         self,
         provider: str | None = None,
+        api_key: str | None = None,
     ):
 
         llm = ModelFactory.get_chat_model(
             provider=provider,
             temperature=0.3,
+            api_key=api_key,
         )
 
         prompt = ChatPromptTemplate.from_messages([
             ("system", self.system_prompt),
-            MessagesPlaceholder(
-                variable_name="chat_history"
-            ),
+            MessagesPlaceholder(variable_name="chat_history"),
             ("human", "{question}"),
         ])
 
         return prompt | llm | StrOutputParser()
 
     def answer(
-            self,
-            query: str,
-            user_id: UUID,
-            conversation_id: UUID,
-            k: int = 4,
-            provider: str | None = None,
+        self,
+        query: str,
+        user_id: str,
+        conversation_id: UUID,
+        k: int = 4,
+        provider: str | None = None,
+        api_key: str | None = None,
     ) -> dict[str, Any]:
 
         if not query or not query.strip():
             raise ValueError("Query cannot be empty.")
 
-        # Step 1: Get conversation history.
         chat_history = self.memory.get_history(
             user_id=user_id,
             conversation_id=conversation_id,
         )
 
-        # Step 2: Rewrite the question using conversation history.
         search_query = self.query_rewriter.rewrite_query(
             question=query,
             chat_history=chat_history,
             provider=provider,
+            api_key=api_key,
         )
 
-        # Step 3: Retrieve relevant document chunks.
         documents = self.retrieval_service.retrieve(
             query=search_query,
             user_id=user_id,
             k=k,
         )
 
-        # Step 4: Handle missing retrieval results.
         if not documents:
+
             fallback = (
                 "I could not find sufficient information "
                 "in your uploaded documents."
@@ -148,14 +149,13 @@ class ConversationalRAG:
                 "total_sources": 0,
             }
 
-        # Step 5: Format retrieved context.
         context = self._format_documents(documents)
 
-        # Step 6: Build the answer-generation chain.
-        chain = self._build_chain(provider=provider)
+        chain = self._build_chain(
+            provider=provider,
+            api_key=api_key,
+        )
 
-        # Step 7: Generate the answer using original question
-        # and conversation history.
         response = chain.invoke(
             {
                 "context": context,
@@ -166,12 +166,11 @@ class ConversationalRAG:
                 "run_name": "conversational_rag_answer",
                 "tags": ["rag", "answer-generation"],
                 "metadata": {
-                    "component": "conversational_rag",
+                    "component": "conversational_rag"
                 },
             },
         )
 
-        # Step 8: Store the conversation exchange.
         self.memory.add_message(
             user_id,
             conversation_id,
@@ -186,22 +185,18 @@ class ConversationalRAG:
             response,
         )
 
-        # Step 9: Prepare source citations.
         sources = []
 
         for document in documents:
+
             sources.append({
                 "source": document.metadata.get(
                     "source",
                     "Unknown source",
                 ),
                 "page": document.metadata.get("page"),
-                "document_id": document.metadata.get(
-                    "document_id"
-                ),
-                "chunk_index": document.metadata.get(
-                    "chunk_index"
-                ),
+                "document_id": document.metadata.get("document_id"),
+                "chunk_index": document.metadata.get("chunk_index"),
                 "content": document.page_content,
             })
 
@@ -211,9 +206,10 @@ class ConversationalRAG:
             "sources": sources,
             "total_sources": len(sources),
         }
+
     def clear_conversation(
         self,
-        user_id: UUID,
+        user_id: str,
         conversation_id: UUID,
     ) -> bool:
 

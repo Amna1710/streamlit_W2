@@ -1,42 +1,18 @@
-
-# Environment variables
 .env
 .env.*
-
-# Keep example configuration
 !.env.example
 
-# Python
 __pycache__/
 *.py[cod]
-*.pyd
-*.so
-
-# Virtual environments
-venv/
 .venv/
-env/
+venv/
 
-# IDE
-.idea/
-.vscode/
-
-# Logs
-logs/
 *.log
-
-# Uploaded documents
-data/uploads/*
-data/processed/*
-
-# Vector database
-chroma_db/
-
-# Testing
 .pytest_cache/
-.coverage
-htmlcov/
+.mypy_cache/
 
-# OS
-.DS_Store
-Thumbs.db
+chroma_db/
+uploads/
+data/
+
+.streamlit/secrets.toml
