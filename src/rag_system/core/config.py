@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     llm_provider: str = "gemini"
 
     gemini_api_key: str | None = None
-    gemini_model: str = "gemini-2.5-flash"
+    gemini_model: str = "gemini-3.5-flash-lite"
 
     openai_api_key: str | None = None
     openai_model: str = "gpt-4o-mini"
