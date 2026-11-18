@@ -754,7 +754,7 @@ with evaluation_tab:
 
                 result = make_request(
                     "POST",
-                    "/chat/evaluate",
+                    "/api/v1/chat/evaluate",
                     headers=get_llm_headers(),
                     params={
                         "provider": provider,
@@ -888,7 +888,7 @@ with history_tab:
 
             result = make_request(
                 "DELETE",
-                f"/chat/conversation/{conversation_id}",
+                f"/api/v1/chat/conversation/{conversation_id}",
                 headers=get_headers(),
             )
 
