@@ -507,7 +507,7 @@ with chat_tab:
 
                     result = make_request(
                         "POST",
-                        "/chat/answer",
+                        "/api/v1/chat/answer",
                         headers=get_llm_headers(),
                         json=payload,
                     )
