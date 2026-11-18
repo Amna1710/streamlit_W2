@@ -592,7 +592,7 @@ with retrieval_tab:
 
                     result = make_request(
                         "POST",
-                        "/chat/retrieve",
+                        "/api/v1/chat/retrieve",
                         headers=get_headers(),
                         json=payload,
                     )
