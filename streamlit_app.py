@@ -412,7 +412,7 @@ with upload_tab:
 
                 result = make_request(
                     "POST",
-                    "/documents/upload",
+                    "/api/v1/documents/upload",
                     headers=get_headers(),
                     files=files,
                 )
