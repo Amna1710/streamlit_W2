@@ -32,7 +32,7 @@ try:
 except Exception:
     API_BASE_URL = os.getenv(
         "API_BASE_URL",
-        "http://127.0.0.1:8000/api/v1",
+        "https://streamlitw2-production.up.railway.app",
     ).rstrip("/")
 
 
